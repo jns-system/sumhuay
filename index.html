@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สุ่มเลขแนวทางหวยจ้าอ้วน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #1a1a1a;
+            /* เพิ่มพื้นหลังเว็บเป็นรูปหมากวนๆ + ฟิลเตอร์มืดๆ ทับ */
+            background-image: linear-gradient(rgba(20, 0, 40, 0.7), rgba(0, 0, 0, 0.9)), url('https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed; /* ให้รูปอยู่กับที่ตอนเลื่อนจอ */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 10px;
+        }
+
+        /* ธีมพื้นหลังตลกๆ (แมวกวนๆ) พร้อมฟิลเตอร์มืดเพื่อให้ตัวเลขเด่น */
+        .card-bg {
+            background-color: #30064a;
+            background-image: linear-gradient(rgba(48, 6, 74, 0.5), rgba(28, 1, 46, 0.8)), url('https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* ลวดลายจางๆ ด้านหลัง */
+        .card-bg::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+                radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px, 20px 20px;
+            background-position: 0 0, 20px 20px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* กรอบสีทอง */
+        .gold-border {
+            border: 2px solid #b78727;
+            outline: 1px solid #fceabb;
+            outline-offset: -6px;
+        }
+
+        /* ข้อความสีทอง */
+        .text-gold {
+            background: linear-gradient(to bottom, #fff5d1 0%, #f9d976 30%, #e7ad2e 70%, #b78727 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.8));
+        }
+
+        /* ตัวเลขสีทองแบบ 3D */
+        .text-gold-3d {
+            background: linear-gradient(180deg, #ffffff 0%, #ffe066 25%, #d4af37 60%, #8b6508 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 4px 2px #3a2500) drop-shadow(0px 8px 6px rgba(0,0,0,0.6));
+            line-height: 1.1;
+        }
+        
+        .text-outline-gold {
+            color: transparent;
+            -webkit-text-stroke: 1px #d4af37;
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.8));
+        }
+
+        /* ปุ่มสุ่ม */
+        .btn-generate {
+            background: linear-gradient(to bottom, #d4af37, #8b6508);
+            border: 2px solid #ffe066;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.2s;
+        }
+        .btn-generate:hover {
+            transform: scale(1.05);
+            background: linear-gradient(to bottom, #ffe066, #d4af37);
+        }
+        .btn-generate:active {
+            transform: scale(0.95);
+        }
+
+        /* Animation ตอนสุ่มเลข */
+        .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- หน้าล็อคอิน -->
+    <div id="login-screen" class="flex flex-col items-center text-center w-full max-w-[350px] bg-black/80 border-2 border-[#d4af37] rounded-2xl p-6 z-20 mt-20 shadow-[0_0_20px_rgba(212,175,55,0.3)] backdrop-blur-md">
+        <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#fceabb] to-[#f8b500] mb-2">เข้าสู่ระบบ</h2>
+        <p class="text-gray-300 text-sm mb-6">กรุณาใส่รหัสผ่านเพื่อเข้าใช้งาน</p>
+        
+        <input type="password" id="password-input" placeholder="ใส่รหัสผ่าน..." class="w-full px-4 py-3 rounded-xl bg-white/10 border border-[#d4af37]/50 text-white text-center text-xl focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37] mb-4" onkeypress="handleKeyPress(event)">
+        
+        <button onclick="checkPassword()" class="w-full py-3 rounded-xl font-bold text-lg bg-gradient-to-b from-[#d4af37] to-[#8b6508] text-white shadow-lg hover:scale-[1.02] transition-transform active:scale-95">
+            ยืนยันรหัส
+        </button>
+        
+        <p id="login-error" class="text-red-400 text-sm mt-4 font-semibold hidden animate-bounce">❌ รหัสผ่านผิด! ไปถามน้องเนทมาใหม่</p>
+    </div>
+
+    <!-- คอนเทนต์หลัก (ซ่อนไว้ก่อนจนกว่าจะใส่รหัสถูก) -->
+    <div id="main-app" class="hidden w-full flex-col items-center">
+
+        <!-- หัวเว็บ -->
+        <div class="text-center w-full max-w-[400px] mb-5 mt-2 z-10 px-4">
+        <div class="text-center mt-2 z-10 w-full">
+            <div class="text-white text-sm font-semibold tracking-widest opacity-90">วันนี้</div>
+            <h1 class="text-gold text-4xl font-extrabold my-1 tracking-wider">แนวทางหวย</h1>
+            <div id="date-display" class="text-white text-md font-bold bg-black/40 px-3 py-1 rounded-full border border-[#d4af37] inline-block shadow-sm">
+                DD/MM/YYYY
+            </div>
+        </div>
+
+        <!-- ส่วนกลาง: เลขเด่น 2 ตัว -->
+        <div class="flex items-center justify-center w-full mt-4 z-10">
+            <div class="flex flex-col items-center mr-2">
+                <span class="text-gold text-sm font-bold -mb-2 z-20 mr-12">เด่น</span>
+                <div id="main-1" class="text-gold-3d text-[6rem] font-black -mt-4">8</div>
+            </div>
+            
+            <div class="text-gold text-lg font-bold flex flex-col items-center justify-center mx-2 z-20 bg-purple-950/60 px-2 rounded-lg border border-[#d4af37]/50 py-1">
+                <span>วิ่ง-รูด</span>
+            </div>
+
+            <div class="flex flex-col items-center ml-2">
+                <div id="main-2" class="text-gold-3d text-[6rem] font-black -mt-4">3</div>
+                <span class="text-gold text-sm font-bold -mt-2 z-20 ml-12">รอง</span>
+            </div>
+        </div>
+
+        <!-- ส่วนเลข 2 ตัว (8 ชุด) -->
+        <div class="grid grid-cols-4 gap-x-4 gap-y-2 w-[85%] mt-2 z-10">
+            <!-- ฝั่งเลขเด่น 1 -->
+            <div id="d1-0" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            <div id="d1-1" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            
+            <!-- ฝั่งเลขเด่น 2 -->
+            <div id="d2-0" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            <div id="d2-1" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            
+            <!-- ฝั่งเลขเด่น 1 (แถว 2) -->
+            <div id="d1-2" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            <div id="d1-3" class="text-gold-3d text-3xl font-bold text-center">--</div>
+
+            <!-- ฝั่งเลขเด่น 2 (แถว 2) -->
+            <div id="d2-2" class="text-gold-3d text-3xl font-bold text-center">--</div>
+            <div id="d2-3" class="text-gold-3d text-3xl font-bold text-center">--</div>
+        </div>
+
+        <!-- ส่วนเลข 3 ตัว (3 ชุด) -->
+        <div class="flex justify-between w-[85%] mt-4 z-10">
+            <div id="d3-0" class="text-gold-3d text-4xl font-bold tracking-widest">---</div>
+            <div id="d3-1" class="text-gold-3d text-4xl font-bold tracking-widest">---</div>
+            <div id="d3-2" class="text-gold-3d text-4xl font-bold tracking-widest">---</div>
+        </div>
+
+    </div>
+
+    <!-- ปุ่มการกระทำ -->
+    <div class="flex flex-col sm:flex-row gap-3 w-full max-w-[400px]">
+        <!-- ปุ่มสุ่มเลข -->
+        <button onclick="generateNumbers()" class="btn-generate flex-1 py-3 rounded-full font-bold text-lg flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(212,175,55,0.4)]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            สุ่มใหม่
+        </button>
+        
+        <!-- ปุ่มคัดลอก -->
+        <button id="btn-copy" onclick="copyNumbers()" class="flex-1 py-3 rounded-full font-bold text-lg flex items-center justify-center gap-2 border-2 border-[#d4af37] text-white bg-[#d4af37]/10 hover:bg-[#d4af37]/30 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            คัดลอก
+        </button>
+    </div>
+
+    <!-- เครดิตท้ายเว็บ -->
+    <div class="mt-8 mb-4 text-center text-sm text-gray-400 max-w-[400px] w-full px-4">
+        <p class="text-[#fceabb] font-semibold mb-1 text-base">✨ น้องเนทคนน่ารัก ✨</p>
+        <p class="text-red-400 font-bold tracking-wide">⚠️ ห้ามแจกเว็บให้คนนอก</p>
+        <p class="text-xs mt-1 opacity-70">ใครแจกเว็บขอให้ปิ๊เหม็น หรรมเหม็น</p>
+    </div>
+
+    </div> <!-- ปิด div main-app -->
+
+    <script>
+        // อัปเดตวันที่ปัจจุบัน (พ.ศ.)
+        function updateDate() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear() + 543;
+            document.getElementById('date-display').innerText = `${day}/${month}/${year}`;
+        }
+
+        // เพิ่ม Animation เล่นตอนตัวเลขเปลี่ยน
+        function addAnimation(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.remove('animate-pop');
+            void el.offsetWidth; // Trigger reflow
+            el.classList.add('animate-pop');
+        }
+
+        // ฟังก์ชันคัดลอกตัวเลข
+        function copyNumbers() {
+            const date = document.getElementById('date-display').innerText;
+            const m1 = document.getElementById('main-1').innerText;
+            const m2 = document.getElementById('main-2').innerText;
+            
+            let d2_list = [];
+            for(let i=0; i<4; i++) d2_list.push(document.getElementById(`d1-${i}`).innerText);
+            for(let i=0; i<4; i++) d2_list.push(document.getElementById(`d2-${i}`).innerText);
+            
+            let d3_list = [];
+            for(let i=0; i<3; i++) d3_list.push(document.getElementById(`d3-${i}`).innerText);
+
+            // รูปแบบข้อความที่จะถูกคัดลอก
+            const textToCopy = `แนวทางหวย วันที่ ${date}\n\nวิ่ง-รูด: ${m1}, ${m2}\nเจาะ 2 ตัว: ${d2_list.join(', ')}\nเลข 3 ตัว: ${d3_list.join(', ')}\n\nขอให้โชคดีครับ!`;
+
+            // สร้าง textarea ชั่วคราวเพื่อทำการคัดลอก
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                // เปลี่ยนข้อความปุ่มเพื่อบอกผู้ใช้ว่าคัดลอกสำเร็จแล้ว
+                const btn = document.getElementById('btn-copy');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✅ คัดลอกแล้ว!';
+                btn.classList.add('bg-[#d4af37]/50');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('bg-[#d4af37]/50');
+                }, 2000);
+            } catch (err) {
+                console.error('ไม่สามารถคัดลอกได้', err);
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        // ฟังก์ชันสุ่มตัวเลข
+        function generateNumbers() {
+            // สุ่มเลขวิ่ง-รูด 2 ตัว (ต้องไม่ซ้ำกัน)
+            let d1 = Math.floor(Math.random() * 10);
+            let d2;
+            do {
+                d2 = Math.floor(Math.random() * 10);
+            } while (d2 === d1);
+
+            document.getElementById('main-1').innerText = d1;
+            document.getElementById('main-2').innerText = d2;
+            addAnimation('main-1');
+            addAnimation('main-2');
+
+            // ฟังก์ชันสุ่มเลข 2 ตัว โดยยึดเลขหลักเป็นเกณฑ์
+            const generate2Digits = (baseDigit) => {
+                let resultSet = new Set();
+                while(resultSet.size < 4) {
+                    let partner = Math.floor(Math.random() * 10);
+                    // สลับตำแหน่งหน้า-หลังแบบสุ่ม
+                    let isFront = Math.random() > 0.5;
+                    let numStr = isFront ? `${baseDigit}${partner}` : `${partner}${baseDigit}`;
+                    resultSet.add(numStr);
+                }
+                return Array.from(resultSet);
+            };
+
+            const d1_set = generate2Digits(d1);
+            const d2_set = generate2Digits(d2);
+
+            // แสดงผลเลข 2 ตัว
+            for(let i = 0; i < 4; i++) {
+                document.getElementById(`d1-${i}`).innerText = d1_set[i];
+                document.getElementById(`d2-${i}`).innerText = d2_set[i];
+                addAnimation(`d1-${i}`);
+                addAnimation(`d2-${i}`);
+            }
+
+            // สุ่มเลข 3 ตัว
+            for(let i = 0; i < 3; i++) {
+                // ให้เลข 3 ตัวมีโอกาสที่จะมีเลขเด่นรวมอยู่ด้วย
+                let num3;
+                if(i === 0) {
+                    // ชุดแรก บังคับให้มีเลข d1
+                    let p1 = Math.floor(Math.random() * 10);
+                    let p2 = Math.floor(Math.random() * 10);
+                    let arr = [d1, p1, p2].sort(() => Math.random() - 0.5);
+                    num3 = arr.join('');
+                } else if(i === 1) {
+                    // ชุดสอง บังคับให้มีเลข d2
+                    let p1 = Math.floor(Math.random() * 10);
+                    let p2 = Math.floor(Math.random() * 10);
+                    let arr = [d2, p1, p2].sort(() => Math.random() - 0.5);
+                    num3 = arr.join('');
+                } else {
+                    // ชุดสาม สุ่มอิสระ
+                    num3 = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+                }
+                
+                document.getElementById(`d3-${i}`).innerText = num3;
+                addAnimation(`d3-${i}`);
+            }
+        }
+
+        // ทำงานเมื่อโหลดหน้าเว็บ
+        window.onload = () => {
+            updateDate();
+            generateNumbers();
+        };
+
+        // ฟังก์ชันตรวจสอบรหัสผ่าน
+        function checkPassword() {
+            const pwd = document.getElementById('password-input').value;
+            if (pwd === '555555') {
+                // ซ่อนหน้าล็อคอิน
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('login-screen').classList.remove('flex');
+                
+                // แสดงหน้าเว็บหลัก
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('flex');
+            } else {
+                // แสดงข้อความด่าเมื่อใส่รหัสผิด
+                const err = document.getElementById('login-error');
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 3000);
+            }
+        }
+
+        // กด Enter เพื่อยืนยันรหัสแทนการกดปุ่มได้
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        }
+    </script>
+</body>
+</html>
